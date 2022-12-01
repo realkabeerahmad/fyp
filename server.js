@@ -90,7 +90,7 @@ app.use("/adoption", petAdoptionRoutes);
 
 app.use("/community", communityRoutes);
 
-const Port = 8000;
+const Port = process.env.PORT || 8000;
 // Starting Server
 app.listen(Port, () => {
   console.log(`Server Connected at ${Port}`.toUpperCase());
