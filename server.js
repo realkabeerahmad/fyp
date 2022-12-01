@@ -76,6 +76,10 @@ app.use(cors());
 
 app.use(express.static(path.join(__dirname + "/Assets")));
 
+app.get("/", (req, res) => {
+  res.send("App is Running Thank you");
+});
+
 app.use("/auth", userRoutes);
 
 app.use("/pet", petRoutes);
