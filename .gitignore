@@ -1,0 +1,5 @@
+/Assets
+/node_modules
+# .env
+/client
+/admin
