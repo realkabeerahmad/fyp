@@ -161,7 +161,7 @@ router.post("/adoptPet", (req, res) => {
   user
     .findByIdAndUpdate({ _id: userId }, userObj)
     .then((user) => {
-      adoptionForm.findOne({ userId: userId }, (err, form) => {
+      adoptionForm.findOne({ userId: userId, petId: petId }, (err, form) => {
         if (form) {
           res.send({
             status: "failed",

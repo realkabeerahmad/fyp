@@ -26,10 +26,12 @@ const product = require("../models/product");
 const cart = require("../models/cart");
 const order = require("../models/order");
 const { default: Stripe } = require("stripe");
+const uploadFile = require("../config/firebase");
+const fs = require("fs");
 
 // Add a Product
-router.post("/addProduct", Upload.single("image"), (req, res) => {
-  const obj = {
+router.post("/addProduct", Upload.single("image"), async (req, res) => {
+  var obj = {
     name: req.body.name,
     category: req.body.category,
     quantity: req.body.quantity,
@@ -39,9 +41,19 @@ router.post("/addProduct", Upload.single("image"), (req, res) => {
     Return: req.body.Return,
     StandardShipping: req.body.StandardShipping,
     FastShipping: req.body.FastShipping,
-    Image: req.file.filename,
+    Image: "",
   };
   try {
+    const fileName = req.file.filename;
+    var img = await uploadFile("./Assets/" + fileName, fileName);
+    obj.Image = img;
+    fs.unlink("./Assets/" + fileName, (err) => {
+      if (err) {
+        throw err;
+      }
+
+      console.log("Delete File successfully.");
+    });
     const Product = new product(obj);
     Product.save()
       .then(() => {
@@ -50,7 +62,10 @@ router.post("/addProduct", Upload.single("image"), (req, res) => {
           .send({ status: "success", message: "Product Saved Successfully" });
       })
       .catch((err) => {
-        throw Error(err.message);
+        res
+          .status(200)
+          .send({ status: "failed", message: "Product Not Saved." });
+        // throw Error(err.message);
       });
   } catch (error) {
     res.send({ status: "failed", message: error.message });
@@ -77,6 +92,21 @@ router.get("/showProduct", (req, res) => {
 router.get("/showAllProducts", (req, res) => {
   try {
     product.find((err, data) => {
+      if (data) {
+        res.status(200).send({ status: "success", products: data });
+      } else {
+        throw Error("Products not found");
+      }
+    });
+  } catch (error) {
+    res.send({ status: "failed", message: error.message });
+  }
+});
+
+// View all Products
+router.get("/searchProducts", (req, res) => {
+  try {
+    product.find({}, (err, data) => {
       if (data) {
         res.status(200).send({ status: "success", products: data });
       } else {

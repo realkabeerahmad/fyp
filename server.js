@@ -36,28 +36,6 @@ dotenv.config();
 const app = express();
 // ========================================================
 // ========================================================
-// const firebaseAdmin = require("firebase-admin");
-// const { v4: uuidv4 } = require("uuid");
-// const serviceAccount = require("./server/config/pethub-ea211-firebase-adminsdk-a1nzj-5e7e3fd58f.json");
-
-// const admin = firebaseAdmin.initializeApp({
-//   credential: firebaseAdmin.credential.cert(serviceAccount),
-// });
-
-// const storageRef = admin.storage().bucket(`gs://pethub-ea211.appspot.com`);
-
-// async function uploadFile(path, filename) {
-//   // Upload the File
-//   const storage = await storageRef.upload(path, {
-//     public: true,
-//     destination: `/uploads/hashnode/${filename}`,
-//     metadata: {
-//       firebaseStorageDownloadTokens: uuidv4(),
-//     },
-//   });
-
-//   return storage[0].metadata.mediaLink;
-// }
 // ========================================================
 // ========================================================
 //MongoDB connection Using Mongoose
@@ -70,14 +48,15 @@ mongoose
   .catch((err) => console.log(err));
 
 app.use(express.json());
-// app.use(express.bodyParser());
 app.use(express.urlencoded());
 app.use(cors());
 
 app.use(express.static(path.join(__dirname + "/Assets")));
 
-app.get("/", (req, res) => {
-  res.send("App is Running Thank you");
+app.get("/", (res) => {
+  res.send(
+    "<h1>PETHUB.com</h1><p>Hello this is pethub.com api please refer to the API documentation for details</p>"
+  );
 });
 
 app.use("/auth", userRoutes);

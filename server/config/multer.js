@@ -8,14 +8,14 @@ const path = require("path");
 const { v4: uuidv4 } = require("uuid");
 
 // Setting Muter Storage for saving Images on Server
-// const storage = multer.diskStorage({
-//   destination: (req, file, cb) => {
-//     cb(null, "Assets");
-//   },
-//   filename: function (req, file, cb) {
-//     cb(null, uuidv4() + "-" + Date.now() + path.extname(file.originalname));
-//   },
-// });
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "Assets");
+  },
+  filename: function (req, file, cb) {
+    cb(null, uuidv4() + "-" + Date.now() + path.extname(file.originalname));
+  },
+});
 
 // Setting File Filter for Images
 const fileFilter = (req, file, cb) => {
@@ -28,7 +28,7 @@ const fileFilter = (req, file, cb) => {
 };
 
 // Creating Multer Object
-const storage = multer.memoryStorage();
+// const storage = multer.memoryStorage();
 // const Upload = multer({ storage: storage });
 const Upload = multer({ storage, fileFilter });
 
