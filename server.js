@@ -53,7 +53,7 @@ app.use(cors());
 
 app.use(express.static(path.join(__dirname + "/Assets")));
 
-app.get("/", (res) => {
+app.get("/", (req, res) => {
   res.send(
     "<h1>PETHUB.com</h1><p>Hello this is pethub.com api please refer to the API documentation for details</p>"
   );
