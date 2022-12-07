@@ -2,12 +2,8 @@
 const mongoose = require("mongoose");
 // User Schema
 const UserSchema = mongoose.Schema({
-  firstName: String,
-  lastName: String,
-  // address: String,
-  // phone: String,
+  name: String,
   cnic: String,
-  // age: Number,
   dob: Date,
   gender: String,
   email: { type: String, required: true },
@@ -15,6 +11,7 @@ const UserSchema = mongoose.Schema({
   verified: { type: Boolean, default: false },
   Image: { type: String },
   isAdmin: { type: Boolean, default: false },
+  isShelter: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now },
 });
 // Expoting User Model

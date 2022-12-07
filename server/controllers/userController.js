@@ -46,8 +46,7 @@ router.post("/register", (req, res) => {
       } else {
         // Creating a user object to save in database
         const user = new User({
-          firstName,
-          lastName,
+          name: firstName + " " + lastName,
           email,
           password,
           Image: "newUser.png",
@@ -226,40 +225,26 @@ router.post("/verifyOTP", async (req, res) => {
 // Add User Image
 router.post("/updateProfileImage", Upload.single("image"), (req, res) => {
   const { userId } = req.body;
-  const obj = { Image: req.file };
-  const path = req.body.path;
-  // Grab the file
-  const file = req.file;
-  // Format the filename
-  const timestamp = Date.now();
-  const name = file.originalname.split(".")[0];
-  const type = file.originalname.split(".")[1];
-  const fileName = `${name}_${timestamp}.${type}`;
-  (async () => {
-    // const url = await uploadFile('./mypic.png', "my-image.png");
-    const url = await uploadFile(path + file.originalname, fileName);
-    console.log(url);
-  })();
-  // console.log(file);
-  res.send("done");
-  // try {
-  //   User.findByIdAndUpdate({ _id: userId }, { Image: obj.Image })
-  //     .then(() => {
-  //       res.status(200).json({
-  //         status: "success",
-  //         message: "Image Added successfully",
-  //         data: userId,
-  //       });
-  //     })
-  //     .catch((err) => {
-  //       throw Error("Unable to update Image" + err.message);
-  //     });
-  // } catch (error) {
-  //   res.json({
-  //     status: "failed",
-  //     error: error.message,
-  //   });
-  // }
+  const file = req.file.filename;
+  const url = uploadFile("./Assets/" + file, file);
+  try {
+    User.findByIdAndUpdate({ _id: userId }, { Image: url })
+      .then(() => {
+        res.status(200).json({
+          status: "success",
+          message: "Image Added successfully",
+          data: userId,
+        });
+      })
+      .catch((err) => {
+        throw Error("Unable to update Image" + err.message);
+      });
+  } catch (error) {
+    res.json({
+      status: "failed",
+      error: error.message,
+    });
+  }
 });
 
 // Re-send OTP route

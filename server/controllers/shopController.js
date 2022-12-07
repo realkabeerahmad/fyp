@@ -51,8 +51,6 @@ router.post("/addProduct", Upload.single("image"), async (req, res) => {
       if (err) {
         throw err;
       }
-
-      console.log("Delete File successfully.");
     });
     const Product = new product(obj);
     Product.save()
@@ -65,7 +63,6 @@ router.post("/addProduct", Upload.single("image"), async (req, res) => {
         res
           .status(200)
           .send({ status: "failed", message: "Product Not Saved." });
-        // throw Error(err.message);
       });
   } catch (error) {
     res.send({ status: "failed", message: error.message });
@@ -74,13 +71,14 @@ router.post("/addProduct", Upload.single("image"), async (req, res) => {
 
 // View a Product
 router.get("/showProduct", (req, res) => {
-  const { productId } = req.body;
+  const { _id } = req.body;
   try {
-    product.findById({ productId }, (product, err) => {
+    product.findById({ _id: _id }, (product, err) => {
       if (product) {
         res.status(200).send({ status: "success", data: product });
       } else {
-        throw Error(err.message);
+        // throw Error(err.message);
+        res.send({ status: "failed", message: err.message });
       }
     });
   } catch (error) {
@@ -104,13 +102,63 @@ router.get("/showAllProducts", (req, res) => {
 });
 
 // View all Products
-router.get("/searchProducts", (req, res) => {
+router.post("/search", (req, res) => {
+  const { searched_text } = req.body;
+  console.log(searched_text);
   try {
-    product.find({}, (err, data) => {
+    product.ensureIndexes({ name: "text", category: "text" });
+
+    product.find({ $text: { $search: searched_text } }, (err, data) => {
+      // console.log(data, err);
       if (data) {
         res.status(200).send({ status: "success", products: data });
       } else {
-        throw Error("Products not found");
+        // throw Error("Products not found");
+        res.send({ status: "failed", message: "Products not found" });
+      }
+    });
+  } catch (error) {
+    res.send({ status: "failed", message: error.message });
+  }
+});
+
+// Rate a Product
+router.post("/rate_product", (req, res) => {
+  const { _id, userId, value } = req.body;
+  try {
+    product.findById({ _id: _id }).then((p) => {
+      let rating = p.rating;
+      console.log(rating.length);
+
+      if (rating.length > 0) {
+        for (let i = 0; i < rating.length; i++) {
+          if (rating[i].userId === userId) {
+            console.log("Rated Before");
+            res.send({ status: "failed", message: "Rating Already Added." });
+          }
+        }
+      } else {
+        product
+          .findByIdAndUpdate(
+            { _id: _id },
+            {
+              $push: {
+                rating: { userId: userId, value: value },
+              },
+            }
+          )
+          .then(() => {
+            res.status(200).send({
+              status: "success",
+              message: "Rating Added",
+            });
+          })
+          .catch((err) => {
+            res.send({
+              status: "failed",
+              message: "Unable to Add Meal Time\n" + err.message,
+            });
+          });
       }
     });
   } catch (error) {

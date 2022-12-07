@@ -5,6 +5,8 @@ const ShelterSchema = mongoose.Schema({
   name: String,
   description: String,
   address: String,
+  email: String,
+  phone: String,
   RegistrationNo: String,
   createdAt: { type: Date, default: Date.now },
 });

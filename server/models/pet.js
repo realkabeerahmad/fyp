@@ -5,22 +5,42 @@ const PetSchema = mongoose.Schema({
   userId: String,
   shelterID: String,
   shelterName: String,
-  name: String,
+  name: { type: String, index: true },
   bio: String,
-  gender: String,
+  gender: { type: String, index: true },
   breed: String,
-  type: String,
+  type: { type: String, index: true },
   image: String,
   passport: String,
   dob: Date,
   rehome: Boolean,
   vaccination: {
+    history: [
+      {
+        DoseName: String,
+        //DoseNumbers:Number,
+        address: String,
+        DoseDate: Date,
+        updatedAt: Date,
+      },
+    ],
     status: Boolean,
+    DoseName: String,
+    //DoseNumbers:Number,
     address: String,
     DoseDate: Date,
     updatedAt: Date,
   },
   vet: {
+    history: [
+      {
+        reason: String,
+        address: String,
+        AppointmentDate: Date,
+        updatedAt: { type: Date, default: Date.now },
+      },
+    ],
+    reason: String,
     address: String,
     AppointmentDate: Date,
     updatedAt: { type: Date, default: Date.now },
@@ -47,5 +67,7 @@ const PetSchema = mongoose.Schema({
   ],
   createdAt: { type: Date, default: Date.now },
 });
+
+PetSchema.index({ name: "text", gender: "text", type: "text" });
 // Exporting Pet Model
 module.exports = mongoose.model("pets", PetSchema);
