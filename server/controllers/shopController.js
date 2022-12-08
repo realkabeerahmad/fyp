@@ -114,9 +114,51 @@ router.post("/search", (req, res) => {
         res.status(200).send({ status: "success", products: data });
       } else {
         // throw Error("Products not found");
-        res.send({ status: "failed", message: "Products not found" });
+        res.send({
+          status: "failed",
+          message: "Products not found",
+          products: [],
+        });
       }
     });
+  } catch (error) {
+    res.send({ status: "failed", message: error.message });
+  }
+});
+
+// Filter
+router.post("/filter", (req, res) => {
+  const { category, from, to } = req.body;
+  console.log(req.body);
+  try {
+    // product.ensureIndexes({ name: "text", category: "text" });
+    if (category) {
+      product
+        .find({ category: category, price: { $gt: from, $lt: to } })
+        .then((data) => {
+          res.status(200).send({ status: "success", products: data });
+        })
+        .catch((err) => {
+          res.send({
+            status: "failed",
+            message: "Products not found",
+            products: [],
+          });
+        });
+    } else if (!category) {
+      product
+        .find({ price: { $gt: from, $lt: to } })
+        .then((data) => {
+          res.status(200).send({ status: "success", products: data });
+        })
+        .catch((err) => {
+          res.send({
+            status: "failed",
+            message: "Products not found",
+            products: [],
+          });
+        });
+    }
   } catch (error) {
     res.send({ status: "failed", message: error.message });
   }
