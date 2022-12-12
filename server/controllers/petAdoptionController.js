@@ -4,6 +4,7 @@ const express = require("express");
 // Multer to upload files
 const upload = require("../config/multer");
 
+const bcrypt = require("bcrypt-nodejs");
 // UUID V4 for generation Link
 const { v4: uuidv4 } = require("uuid");
 
@@ -25,20 +26,46 @@ const router = express.Router();
 
 // Add a Shelter
 router.post("/addShelter", (req, res) => {
-  const { name, description, address, RegistrationNo } = req.body;
-  const obj = { name, description, address, RegistrationNo };
+  const { name, description, address, RegistrationNo, email, phone, password } =
+    req.body;
+  const obj = {
+    name,
+    description,
+    address,
+    RegistrationNo,
+    email,
+    phone,
+    Image: "https://i.ibb.co/Lk9vMV2/newUser.png",
+  };
+  const salt = bcrypt.genSaltSync(10);
+  var shelterUser = {
+    name,
+    email,
+    password,
+    Image: "https://i.ibb.co/Lk9vMV2/newUser.png",
+    isShelter: true,
+  };
   try {
-    shelter.findOne({ RegistrationNo: RegistrationNo }, async (err, data) => {
+    shelter.findOne({ email: email }, async (err, data) => {
       if (data) {
         res.send({ status: "failed", message: "Shelter Already Registered" });
       } else if (err) {
         res.send({ status: "failed", message: err.message });
       } else {
-        const Shelter = new shelter(obj);
-        await Shelter.save();
-        res.status(200).send({
-          status: "success",
-          message: "Shelter Registered Successfully",
+        bcrypt.hash(shelterUser.password, salt, null, async (err, hash) => {
+          if (err) {
+            console.log(err);
+          } else {
+            shelterUser.password = hash;
+            const Shelter = new shelter(obj);
+            await Shelter.save();
+            const User = new user(shelterUser);
+            await User.save();
+            res.status(200).send({
+              status: "success",
+              message: "Shelter Registered Successfully",
+            });
+          }
         });
       }
     });

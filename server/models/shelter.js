@@ -7,7 +7,9 @@ const ShelterSchema = mongoose.Schema({
   address: String,
   email: String,
   phone: String,
+  Logo: { type: String },
   RegistrationNo: String,
+  // password: { type: String, required: true },
   createdAt: { type: Date, default: Date.now },
 });
 // Exporting Shelter Model
