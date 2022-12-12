@@ -3,21 +3,6 @@ const express = require("express");
 
 // Multer to upload files
 const upload = require("../config/multer");
-
-// UUID V4 for generation Link
-const { v4: uuidv4 } = require("uuid");
-
-// Pet Model Created using MongoDB
-const User = require("../models/user");
-
-// Pet Model Created using MongoDB
-const Pet = require("../models/pet");
-
-// Shelter Details Model
-const shelter = require("../models/shelter");
-
-// Adoption Form Model
-const adoptionForm = require("../models/adoptionForm");
 const user = require("../models/user");
 const post = require("../models/post");
 
@@ -26,13 +11,19 @@ const router = express.Router();
 
 // Add a Post
 router.post("/post", (req, res) => {
-  const { content, userId, name, Image, tags } = req.body;
-  const newTags = tags.split(",");
+  const { content, userId, name, Image } = req.body;
+  const seprate = content.split(" ");
+  const tags = [];
+  for (let i = 0; i < seprate.length; i++) {
+    if (seprate[i][0] === "#") {
+      tags.push(seprate[i]);
+    }
+  }
   try {
     const Post = new post({
       content: content,
       user: { userId: userId, name: name, Image: Image },
-      tags: newTags,
+      tags: tags,
     });
     Post.save()
       .then(() => {
@@ -66,19 +57,66 @@ router.post("/deletePost", (req, res) => {
 router.post("/comment", (req, res) => {
   const { content, userId, _id } = req.body;
   try {
+    user.findById({ _id: userId }).then((data) => {
+      post
+        .findByIdAndUpdate(
+          { _id: _id },
+          {
+            $push: {
+              comments: {
+                user: { _id: data._id, name: data.name, Image: data.Image },
+                content: content,
+              },
+            },
+            $inc: { comments_count: 1 },
+          }
+        )
+        .then(() => {
+          res.send({ status: "success", message: "Comment Added" });
+        })
+        .catch((err) => {
+          res.send({ status: "failed", message: err.message });
+        });
+    });
+  } catch (error) {
+    res.send({ status: "failed", message: error.message });
+  }
+});
+// Delete a Comment
+router.post("/deleteComment", (req, res) => {
+  const { content, userId, _id, commentId } = req.body;
+  try {
     post
-      .findByIdAndUpdate(
-        { _id: _id },
-        {
-          $push: { comments: { userId: userId, content: content } },
-          $inc: { comments_count: 1 },
+      .find({ _id: _id, comments: { _id: commentId, user: { _id: userId } } })
+      .then((data) => {
+        if (data) {
+          post
+            .findByIdAndUpdate(
+              { _id: _id },
+              {
+                $pull: {
+                  comments: {
+                    _id: commentId,
+                  },
+                },
+                $inc: { comments_count: -1 },
+              }
+            )
+            .then(() => {
+              res.send({ status: "success", message: "Comment Deleted" });
+            })
+            .catch((err) => {
+              res.send({ status: "failed", message: err.message });
+            });
+        } else {
+          res.send({ status: "failed", message: "Comment not Found" });
         }
-      )
-      .then(() => {
-        res.send({ status: "success", message: "Comment Added" });
       })
       .catch((err) => {
-        res.send({ status: "failed", message: err.message });
+        res.send({
+          status: "success",
+          message: "Comment Cannot be Deleted by other Users",
+        });
       });
   } catch (error) {
     res.send({ status: "failed", message: error.message });
@@ -154,6 +192,46 @@ router.get("/showAllPosts", (req, res) => {
           data: posts,
         });
       });
+  } catch (error) {
+    res.send({ status: "failed", message: error.message });
+  }
+});
+
+// Search Posts
+router.post("/search", (req, res) => {
+  const { searched_text } = req.body;
+  // console.log(searched_text);
+  try {
+    post.ensureIndexes({ content: "text" });
+    if (searched_text[0] === "#") {
+      post.find({ tags: { $all: [searched_text] } }, (err, data) => {
+        // console.log(data, err);
+        if (data) {
+          res.status(200).send({ status: "success", posts: data });
+        } else {
+          // throw Error("Products not found");
+          res.send({
+            status: "failed",
+            message: "Post not found",
+            posts: [],
+          });
+        }
+      });
+    } else {
+      post.find({ $text: { $search: searched_text } }, (err, data) => {
+        // console.log(data, err);
+        if (data) {
+          res.status(200).send({ status: "success", posts: data });
+        } else {
+          // throw Error("Products not found");
+          res.send({
+            status: "failed",
+            message: "Post not found",
+            posts: [],
+          });
+        }
+      });
+    }
   } catch (error) {
     res.send({ status: "failed", message: error.message });
   }

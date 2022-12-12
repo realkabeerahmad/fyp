@@ -19,10 +19,13 @@ const PostSchema = mongoose.Schema({
   likes_count: { type: Number, default: 0 },
   comments: [
     {
-      userId: String,
+      user: {
+        _id: String,
+        name: String,
+        Image: String,
+      },
       content: String,
       createdAt: { type: Date, default: Date.now },
-      default: [],
     },
   ],
   comments_count: { type: Number, default: 0 },
