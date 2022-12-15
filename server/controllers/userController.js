@@ -223,10 +223,9 @@ router.post("/verifyOTP", async (req, res) => {
   }
 });
 // Add User Image
-router.post("/updateProfileImage", Upload.single("image"), (req, res) => {
-  const { userId } = req.body;
-  const file = req.file.filename;
-  const url = uploadFile("./Assets/" + file, file);
+router.post("/updateProfileImage", (req, res) => {
+  const { userId, url } = req.body;
+  console.log(req.body);
   try {
     User.findByIdAndUpdate({ _id: userId }, { Image: url })
       .then(() => {
