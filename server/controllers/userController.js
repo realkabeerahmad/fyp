@@ -49,7 +49,7 @@ router.post("/register", (req, res) => {
           name: firstName + " " + lastName,
           email,
           password,
-          Image: "newUser.png",
+          Image: "https://i.ibb.co/Lk9vMV2/newUser.png",
         });
         // Hashing users password
         bcrypt.hash(user.password, salt, null, async (err, hash) => {
@@ -165,7 +165,6 @@ router.post("/verifyOTP", async (req, res) => {
   try {
     // Get data from Request body
     const { userID, otp } = req.body;
-    console.log(userID);
     // Check OTP Details
     if (!userID || !otp) {
       throw Error("Empty otp Details are not allowed");
@@ -225,7 +224,6 @@ router.post("/verifyOTP", async (req, res) => {
 // Add User Image
 router.post("/updateProfileImage", (req, res) => {
   const { userId, url } = req.body;
-  console.log(req.body);
   try {
     User.findByIdAndUpdate({ _id: userId }, { Image: url })
       .then(() => {
@@ -251,7 +249,6 @@ router.post("/reSendOtpVerificatioCode", async (req, res) => {
   try {
     // Get Data from Request Body
     let { userID, email } = req.body;
-    console.log(userID);
     //Check if Data is Correct
     if (!userID || !email) {
       throw Error("Empty user Details are not allowed");
@@ -259,7 +256,6 @@ router.post("/reSendOtpVerificatioCode", async (req, res) => {
       // Delete old OTP Generated
       await userOtpVerification.deleteMany({ userID });
       // Call Send OTP Function
-      console.log(userID);
       SendOtpVerificationEmail({ _id: userID, email }, res);
     }
   } catch (error) {
@@ -272,7 +268,6 @@ router.post("/reSendOtpVerificatioCode", async (req, res) => {
 
 // Send OTP Function
 const SendOtpVerificationEmail = async ({ _id, email }, res) => {
-  console.log(_id);
   try {
     // Generated OTP
     const otp = Math.floor(1000 + Math.random() * 9000);

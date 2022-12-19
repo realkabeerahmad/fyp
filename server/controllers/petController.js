@@ -17,26 +17,46 @@ const Pet = require("../models/pet");
 const router = express.Router();
 
 // Add a Pet
-router.post("/addPet", upload.single("image"), (req, res) => {
+router.post("/add", (req, res) => {
   // Getting Data
-  const obj = {
-    userId: req.body.userId,
-    name: req.body.name,
-    bio: req.body.bio,
-    gender: req.body.gender,
-    breed: req.body.breed,
-    type: req.body.type,
-    image: req.file.filename,
-    passport: req.body.passport,
-    dob: req.body.dob,
-    vaccination: {},
-    rehome: false,
-  };
-  const _id = obj.userId;
+  var { userId, name, bio, gender, breed, type, image, passport, age } =
+    req.body;
+  var _id = userId;
   try {
     // Check if user Exist
-    User.findById({ _id }, (err, user) => {
-      if (user) {
+    User.findById({ _id }, (err, data) => {
+      if (data) {
+        var obj = {};
+        if (data.isShelter) {
+          obj = {
+            user: { _id: data._id, name: data.name },
+            shelter: { _id: data._id, name: data.name },
+            name: name,
+            bio: bio,
+            gender: gender,
+            breed: breed,
+            type: type,
+            image: image,
+            passport: passport ? passport : "",
+            age: age,
+            rehome: false,
+          };
+          // const pet = new Pet(obj);
+        } else {
+          obj = {
+            user: { _id: data._id, name: data.name },
+            name: name,
+            bio: bio,
+            gender: gender,
+            breed: breed,
+            type: type,
+            image: image,
+            passport: passport ? passport : "",
+            age: age,
+            rehome: false,
+          };
+          // const pet = new Pet(obj);
+        }
         // Create an obj to store in DB
         const pet = new Pet(obj);
         // Save obj in DB
@@ -49,10 +69,17 @@ router.post("/addPet", upload.single("image"), (req, res) => {
             });
           })
           .catch((err) => {
-            throw Error("Unable to Register Pet\n" + err.message);
+            res.status(200).send({
+              status: "failed",
+              message: "Unable to Register Pet\n" + err.message,
+            });
+            // throw Error();
           });
       } else {
-        throw Error("User Not Found");
+        res.status(200).send({
+          status: "failed",
+          message: "User not found",
+        });
       }
     });
   } catch (error) {
@@ -63,8 +90,43 @@ router.post("/addPet", upload.single("image"), (req, res) => {
   }
 });
 
+// Edit Pet Details
+router.post("/edit", (req, res) => {
+  const { _id, breed, gender, age, passport, image } = req.body;
+  try {
+    Pet.findById({ _id: _id })
+      .then((data) => {
+        breed ? (data.breed = breed) : false;
+        gender ? (data.gender = gender) : false;
+        age ? (data.age = age) : false;
+        passport ? (data.passport = passport) : false;
+        image ? (data.image = image) : false;
+        data
+          .save()
+          .then((pet) => {
+            res.send({
+              status: "success",
+              pet: pet,
+              message: "Pet info Updated Successfully",
+            });
+          })
+          .catch((err) => {
+            res.send({
+              status: "failed",
+              message: "Pet info can't be Updated",
+            });
+          });
+      })
+      .catch((err) => {
+        res.send({ status: "failed", message: "Pet not Found" });
+      });
+  } catch (error) {
+    res.send({ status: "failed", message: error.message });
+  }
+});
+
 // Show a Single Pet Details
-router.post("/showPet", (req, res) => {
+router.post("/show", (req, res) => {
   var { _id } = req.body;
   try {
     Pet.findById({ _id: _id }, (err, data) => {
@@ -84,7 +146,7 @@ router.post("/showPet", (req, res) => {
 });
 
 // Show a Single Pet Details
-router.post("/deletePet", (req, res) => {
+router.post("/delete", (req, res) => {
   const { _id } = req.body;
   try {
     Pet.findByIdAndDelete({ _id })
@@ -103,10 +165,10 @@ router.post("/deletePet", (req, res) => {
 });
 
 // Show All Pets of a User
-router.post("/showAllPets", (req, res) => {
+router.post("/user/show", (req, res) => {
   const { userId } = req.body;
   try {
-    Pet.find({ userId: userId }, (err, data) => {
+    Pet.find({ "user._id": userId }, (err, data) => {
       if (data !== [] || data !== null) {
         res.status(200).json({
           status: "success",
@@ -127,9 +189,9 @@ router.post("/showAllPets", (req, res) => {
 
 // Pet Rehome
 router.post("/rehome", (req, res) => {
-  var { petId } = req.body;
+  var { _id } = req.body;
   try {
-    pet.findByIdAndUpdate({ petId, rehome: true }, (err, data) => {
+    Pet.findByIdAndUpdate({ _id: _id }, { rehome: true }, (err, data) => {
       if (data) {
         res.status(200).send({
           status: "success",
@@ -145,7 +207,7 @@ router.post("/rehome", (req, res) => {
 });
 
 // Add a Pet Meal Time
-router.post("/addMealTime", (req, res) => {
+router.post("/meal/add", (req, res) => {
   const { _id, name, time } = req.body;
   try {
     Pet.findByIdAndUpdate(
@@ -173,7 +235,7 @@ router.post("/addMealTime", (req, res) => {
 });
 
 // Add a Pet Walk Time
-router.post("/addWalkTime", (req, res) => {
+router.post("/walk/add", (req, res) => {
   const { _id, name, time } = req.body;
   try {
     Pet.findByIdAndUpdate(
@@ -201,7 +263,7 @@ router.post("/addWalkTime", (req, res) => {
 });
 
 // Delete Pet Meal Time
-router.post("/deleteMealTime", (req, res) => {
+router.post("/meal/delete", (req, res) => {
   const { _id, timeId } = req.body;
   try {
     Pet.findByIdAndUpdate(
@@ -218,8 +280,9 @@ router.post("/deleteMealTime", (req, res) => {
     res.send({ status: "failed", message: error.message });
   }
 });
+
 // Delete Pet Walk Time
-router.post("/deleteWalkTime", (req, res) => {
+router.post("/walk/delete", (req, res) => {
   const { _id, timeId } = req.body;
   try {
     Pet.findByIdAndUpdate(
@@ -238,14 +301,15 @@ router.post("/deleteWalkTime", (req, res) => {
 });
 
 // Add Pet Vaccination Details
-router.post("/addVaccination", (req, res) => {
-  const { _id, DoseDate, address, status } = req.body;
+router.post("/vaccination/add_new", (req, res) => {
+  const { _id, DoseDate, address, status, name } = req.body;
   try {
     Pet.updateOne(
       { _id: _id },
       {
         $set: {
           "vaccination.status": status,
+          "vaccination.DoseName": name,
           "vaccination.DoseDate": DoseDate,
           "vaccination.address": address,
           "vaccination.updatedAt": Date.now(),
@@ -270,14 +334,69 @@ router.post("/addVaccination", (req, res) => {
   }
 });
 
+// Mark Vaccination as Done
+router.post("/vaccination/MarkAsDone", (req, res) => {
+  const { _id } = req.body;
+  try {
+    Pet.findById({ _id: _id })
+      .then((data) => {
+        if (data.vaccination) {
+          Pet.findByIdAndUpdate(
+            { _id: _id },
+            {
+              $push: {
+                "vaccination.history": {
+                  DoseName: data.vaccination.DoseName,
+                  DoseDate: data.vaccination.DoseDate,
+                  address: data.vaccination.address,
+                },
+              },
+              $set: {
+                "vaccination.DoseName": "",
+                "vaccination.DoseDate": "",
+                "vaccination.address": "",
+              },
+            }
+          )
+            .then(() => {
+              res.send({
+                status: "success",
+                message: "Appointment Marked as Done",
+              });
+            })
+            .catch((err) => {
+              res.send({
+                status: "failed",
+                message: "Error Occured\n" + err.message,
+              });
+            });
+        } else {
+          res.send({
+            status: "failed",
+            message: "Vaccination not Found",
+          });
+        }
+      })
+      .catch((err) => {
+        res.send({
+          status: "failed",
+          message: "Error Occured\n" + err.message,
+        });
+      });
+  } catch (err) {
+    res.send({ status: "failed", message: err.message });
+  }
+});
+
 // Update Pet Vaccination Date
-router.post("/updateVaccinationDate", (req, res) => {
-  const { _id, DoseDate } = req.body;
+router.post("/vaccination/update_date", (req, res) => {
+  const { _id, DoseDate, DoseName } = req.body;
   try {
     Pet.updateOne(
       { _id: _id },
       {
         $set: {
+          "vaccination.DoseName": DoseName,
           "vaccination.DoseDate": DoseDate,
           "vaccination.updatedAt": Date.now(),
         },
@@ -298,16 +417,18 @@ router.post("/updateVaccinationDate", (req, res) => {
 });
 
 // Add Pet Vet Details
-router.post("/addVet", (req, res) => {
-  const { _id, AppointmentDate, address } = req.body;
+router.post("/vet/add_appointment", (req, res) => {
+  const { _id, reason, AppointmentDate, address } = req.body;
   try {
     Pet.updateOne(
       { _id: _id },
       {
         $set: {
+          "vet.reason": reason,
           "vet.AppointmentDate": AppointmentDate,
           "vet.address": address,
           "vet.updatedAt": Date.now(),
+          "vet.history": [],
         },
       }
     )
@@ -325,8 +446,57 @@ router.post("/addVet", (req, res) => {
   }
 });
 
-// Update Pet Vaccination Date
-router.post("/updateVetDate", (req, res) => {
+// Mark Vet Appointment as Done
+router.post("/vet/MarkAsDone", (req, res) => {
+  const { _id } = req.body;
+  try {
+    Pet.findById({ _id: _id })
+      .then((data) => {
+        if (data.vet) {
+          Pet.findByIdAndUpdate(
+            { _id: _id },
+            {
+              $push: {
+                "vet.history": {
+                  reason: data.vet.reason,
+                  AppointmentDate: data.vet.AppointmentDate,
+                  address: data.vet.address,
+                },
+              },
+              $set: {
+                "vet.reason": "",
+                "vet.AppointmentDate": "",
+                "vet.address": "",
+              },
+            }
+          )
+            .then(() => {
+              res.send({
+                status: "success",
+                message: "Appointment Marked as Done",
+              });
+            })
+            .catch((err) => {
+              res.send({
+                status: "failed",
+                message: "Error Occured\n" + err.message,
+              });
+            });
+        }
+      })
+      .catch((err) => {
+        res.send({
+          status: "failed",
+          message: "Error Occured\n" + err.message,
+        });
+      });
+  } catch (err) {
+    res.send({ status: "failed", message: err.message });
+  }
+});
+
+// Update Pet Vet Appointment Date
+router.post("vet/update_appointment", (req, res) => {
   const { _id, AppointmentDate } = req.body;
   try {
     Pet.updateOne(
@@ -356,7 +526,7 @@ router.post("/updateVetDate", (req, res) => {
 });
 
 // Add a Pet Image
-router.post("/addImage", upload.single("image"), (req, res) => {
+router.post("/gallery/add", upload.single("image"), (req, res) => {
   const { _id } = req.body;
   const obj = { image: req.file.filename };
   try {
@@ -385,7 +555,7 @@ router.post("/addImage", upload.single("image"), (req, res) => {
 });
 
 // Delete Pet Meal Time
-router.post("/deleteImage", (req, res) => {
+router.post("/gallery/delete", (req, res) => {
   const { _id, imageId } = req.body;
   try {
     Pet.findByIdAndUpdate(

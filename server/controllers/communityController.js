@@ -30,7 +30,6 @@ router.post("/post", (req, res) => {
         res.send({ status: "success", message: "Post Successfull" });
       })
       .catch((err) => {
-        console.log(err);
         res.send({ status: "failed", message: "Error Occured" });
       });
   } catch (error) {
@@ -200,12 +199,10 @@ router.get("/showAllPosts", (req, res) => {
 // Search Posts
 router.post("/search", (req, res) => {
   const { searched_text } = req.body;
-  // console.log(searched_text);
   try {
     post.ensureIndexes({ content: "text" });
     if (searched_text[0] === "#") {
       post.find({ tags: { $all: [searched_text] } }, (err, data) => {
-        // console.log(data, err);
         if (data) {
           res.status(200).send({ status: "success", posts: data });
         } else {
@@ -219,7 +216,6 @@ router.post("/search", (req, res) => {
       });
     } else {
       post.find({ $text: { $search: searched_text } }, (err, data) => {
-        // console.log(data, err);
         if (data) {
           res.status(200).send({ status: "success", posts: data });
         } else {

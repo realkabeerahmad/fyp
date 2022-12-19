@@ -2,9 +2,14 @@
 const mongoose = require("mongoose");
 // Pet Schema
 const PetSchema = mongoose.Schema({
-  userId: String,
-  shelterID: String,
-  shelterName: String,
+  user: {
+    _id: String,
+    name: String,
+  },
+  shelter: {
+    _id: String,
+    name: String,
+  },
   name: { type: String, index: true },
   bio: String,
   gender: { type: String, index: true },
@@ -12,21 +17,18 @@ const PetSchema = mongoose.Schema({
   type: { type: String, index: true },
   image: String,
   passport: String,
-  dob: Date,
+  age: String,
   rehome: Boolean,
   vaccination: {
     history: [
       {
         DoseName: String,
-        //DoseNumbers:Number,
         address: String,
         DoseDate: Date,
         updatedAt: Date,
       },
     ],
-    status: Boolean,
     DoseName: String,
-    //DoseNumbers:Number,
     address: String,
     DoseDate: Date,
     updatedAt: Date,
@@ -38,6 +40,7 @@ const PetSchema = mongoose.Schema({
         address: String,
         AppointmentDate: Date,
         updatedAt: { type: Date, default: Date.now },
+        default: Array,
       },
     ],
     reason: String,

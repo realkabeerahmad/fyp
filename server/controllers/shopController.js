@@ -104,12 +104,10 @@ router.get("/showAllProducts", (req, res) => {
 // View all Products
 router.post("/search", (req, res) => {
   const { searched_text } = req.body;
-  console.log(searched_text);
   try {
     product.ensureIndexes({ name: "text", category: "text" });
 
     product.find({ $text: { $search: searched_text } }, (err, data) => {
-      // console.log(data, err);
       if (data) {
         res.status(200).send({ status: "success", products: data });
       } else {
@@ -129,7 +127,6 @@ router.post("/search", (req, res) => {
 // Filter
 router.post("/filter", (req, res) => {
   const { category, from, to } = req.body;
-  console.log(req.body);
   try {
     // product.ensureIndexes({ name: "text", category: "text" });
     if (category) {
@@ -170,12 +167,10 @@ router.post("/rate_product", (req, res) => {
   try {
     product.findById({ _id: _id }).then((p) => {
       let rating = p.rating;
-      console.log(rating.length);
 
       if (rating.length > 0) {
         for (let i = 0; i < rating.length; i++) {
           if (rating[i].userId === userId) {
-            console.log("Rated Before");
             res.send({ status: "failed", message: "Rating Already Added." });
           }
         }
@@ -234,7 +229,6 @@ router.post("/cart", (req, res) => {
   try {
     cart.findOne({ userId: userId }, async (err, data) => {
       if (data) {
-        console.log(data);
         res.send({
           status: "failed",
           message: "Cart Already Exist",
@@ -270,7 +264,6 @@ router.post("/getCart", (req, res) => {
 });
 router.post("/getCartById", (req, res) => {
   const { _id } = req.body;
-  console.log(_id);
   try {
     cart.findById({ _id: _id }, async (err, data) => {
       if (data) {
@@ -439,7 +432,6 @@ router.post("/checkOut", async (req, res) => {
           if (data) {
             var newQuan = { quantity: data.quantity - quantity };
             var NumberSold = { NumberSold: data.NumberSold + quantity };
-            console.log(newQuan);
             product
               .findByIdAndUpdate(
                 { _id: _id },
@@ -518,7 +510,6 @@ router.get("/showOrders", (req, res) => {
 });
 
 router.post("/payment", (req, res) => {
-  console.log(req.body);
   Strip.customers
     .create({
       email: req.body.email,
