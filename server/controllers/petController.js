@@ -302,25 +302,26 @@ router.post("/walk/delete", (req, res) => {
 
 // Add Pet Vaccination Details
 router.post("/vaccination/add_new", (req, res) => {
-  const { _id, DoseDate, address, status, name } = req.body;
+  const { _id, DoseDate, address, name } = req.body;
+  // console.log(req.body);
+  console.log(_id);
   try {
-    Pet.updateOne(
+    Pet.findByIdAndUpdate(
       { _id: _id },
       {
-        $set: {
-          "vaccination.status": status,
-          "vaccination.DoseName": name,
-          "vaccination.DoseDate": DoseDate,
-          "vaccination.address": address,
-          "vaccination.updatedAt": Date.now(),
+        vaccination: {
+          DoseName: name,
+          DoseDate: DoseDate,
+          address: address,
+          updatedAt: Date.now(),
         },
       }
     )
-      .then((data) => {
+      .then(() => {
         res.send({
           status: "success",
           message: "Vaccination Details Added",
-          pet: data,
+          // pet: data,
         });
       })
       .catch((err) => {
