@@ -19,33 +19,33 @@ const PetSchema = mongoose.Schema({
   passport: String,
   age: String,
   rehome: Boolean,
+  vaccination_history: [
+    {
+      DoseName: String,
+      address: String,
+      DoseDate: { type: Date, default: null },
+      updatedAt: { type: Date, default: Date.now },
+    },
+  ],
   vaccination: {
-    history: [
-      {
-        DoseName: String,
-        address: String,
-        DoseDate: Date,
-        updatedAt: Date,
-      },
-    ],
     DoseName: String,
     address: String,
-    DoseDate: Date,
+    DoseDate: { type: Date, default: null },
     updatedAt: Date,
   },
+  vet_history: [
+    {
+      reason: String,
+      address: String,
+      AppointmentDate: { type: Date, default: null },
+      updatedAt: { type: Date, default: Date.now },
+      default: Array,
+    },
+  ],
   vet: {
-    history: [
-      {
-        reason: String,
-        address: String,
-        AppointmentDate: Date,
-        updatedAt: { type: Date, default: Date.now },
-        default: Array,
-      },
-    ],
     reason: String,
     address: String,
-    AppointmentDate: Date,
+    AppointmentDate: { type: Date, default: null },
     updatedAt: { type: Date, default: Date.now },
   },
   mealTimes: [
@@ -71,6 +71,6 @@ const PetSchema = mongoose.Schema({
   createdAt: { type: Date, default: Date.now },
 });
 
-PetSchema.index({ name: "text", gender: "text", type: "text" });
+PetSchema.index({ name: "text", gender: "text", type: "text", breed: "text" });
 // Exporting Pet Model
 module.exports = mongoose.model("pets", PetSchema);

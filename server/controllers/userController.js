@@ -132,27 +132,27 @@ router.post("/login", (req, res) => {
           // Decrypting and comparing Password
           const validPassword = bcrypt.compareSync(password, user.password);
           if (validPassword) {
-            res.status(200).json({
+            res.send({
               status: "success",
               message: "Valid Password",
               user: user,
             });
           } else {
-            res.status(200).json({
+            res.send({
               status: "failed",
               message: "Invalid Password",
               user: user,
             });
           }
         } else {
-          res.status(200).json({
+          res.send({
             status: "pending",
             message: "Please Verify Your Email",
             user: user,
           });
         }
       } else {
-        res.status(200).json({ message: "User do not Exist" });
+        res.send({ status: "failed", message: "User do not Exist" });
       }
     });
   } catch (error) {

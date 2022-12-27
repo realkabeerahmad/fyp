@@ -30,7 +30,7 @@ const uploadFile = require("../config/firebase");
 const fs = require("fs");
 
 // Add a Product
-router.post("/addProduct", Upload.single("image"), async (req, res) => {
+router.post("/add", async (req, res) => {
   var obj = {
     name: req.body.name,
     category: req.body.category,
@@ -41,17 +41,9 @@ router.post("/addProduct", Upload.single("image"), async (req, res) => {
     Return: req.body.Return,
     StandardShipping: req.body.StandardShipping,
     FastShipping: req.body.FastShipping,
-    Image: "",
+    Image: req.body.image,
   };
   try {
-    const fileName = req.file.filename;
-    var img = await uploadFile("./Assets/" + fileName, fileName);
-    obj.Image = img;
-    fs.unlink("./Assets/" + fileName, (err) => {
-      if (err) {
-        throw err;
-      }
-    });
     const Product = new product(obj);
     Product.save()
       .then(() => {
@@ -70,7 +62,7 @@ router.post("/addProduct", Upload.single("image"), async (req, res) => {
 });
 
 // View a Product
-router.get("/showProduct", (req, res) => {
+router.get("/show", (req, res) => {
   const { _id } = req.body;
   try {
     product.findById({ _id: _id }, (product, err) => {
@@ -87,7 +79,7 @@ router.get("/showProduct", (req, res) => {
 });
 
 // View all Products
-router.get("/showAllProducts", (req, res) => {
+router.get("/show/all", (req, res) => {
   try {
     product.find((err, data) => {
       if (data) {
@@ -162,7 +154,7 @@ router.post("/filter", (req, res) => {
 });
 
 // Rate a Product
-router.post("/rate_product", (req, res) => {
+router.post("/rate", (req, res) => {
   const { _id, userId, value } = req.body;
   try {
     product.findById({ _id: _id }).then((p) => {
@@ -204,7 +196,7 @@ router.post("/rate_product", (req, res) => {
 });
 
 // Delete a Product
-router.post("/deleteProduct", (req, res) => {
+router.post("/delete", (req, res) => {
   const { _id } = req.body;
   try {
     product
@@ -224,7 +216,7 @@ router.post("/deleteProduct", (req, res) => {
 });
 
 // Create Cart
-router.post("/cart", (req, res) => {
+router.post("/cart/new", (req, res) => {
   const { userId } = req.body;
   try {
     cart.findOne({ userId: userId }, async (err, data) => {
@@ -244,7 +236,9 @@ router.post("/cart", (req, res) => {
     res.send({ status: "failed", message: error.message });
   }
 });
-router.post("/getCart", (req, res) => {
+
+// Show Cart
+router.post("/cart/show", (req, res) => {
   const { userId } = req.body;
   try {
     cart.find({ userId: userId }, async (err, data) => {
@@ -262,7 +256,9 @@ router.post("/getCart", (req, res) => {
     res.send({ status: "failed", message: error.message });
   }
 });
-router.post("/getCartById", (req, res) => {
+
+// Show Cart by ID
+router.post("/cart/show/id", (req, res) => {
   const { _id } = req.body;
   try {
     cart.findById({ _id: _id }, async (err, data) => {
@@ -282,7 +278,7 @@ router.post("/getCartById", (req, res) => {
 });
 
 // Add Product to Cart
-router.post("/addToCart", (req, res) => {
+router.post("/cart/add", (req, res) => {
   const { _id, name, price, image, cartId, quantity } = req.body;
   try {
     product.findById({ _id: _id }, (err, data) => {
@@ -350,7 +346,7 @@ router.post("/addToCart", (req, res) => {
 });
 
 // Delete From Cart
-router.post("/deleteFromCart", (req, res) => {
+router.post("/cart/delete", (req, res) => {
   const { cartId, _id } = req.body;
   try {
     cart
@@ -371,7 +367,9 @@ router.post("/deleteFromCart", (req, res) => {
     res.send({ status: "failed", message: error.message });
   }
 });
-router.post("/updateQuantity", (req, res) => {
+
+// Update Cart Quantity
+router.post("/cart/update/quantity", (req, res) => {
   const { cartId, _id, quantity } = req.body;
   cart
     .updateOne(
@@ -381,7 +379,7 @@ router.post("/updateQuantity", (req, res) => {
       },
       {
         $set: {
-          "products.$.quantity": quantity,
+          "products.quantity": quantity,
         },
       }
     )
@@ -399,28 +397,7 @@ router.post("/updateQuantity", (req, res) => {
     });
 });
 
-router.post("/showCart", (req, res) => {
-  const { cartId } = req.body;
-  try {
-    cart.findById({ _id: cartId }, (err, data) => {
-      if (data) {
-        res.status(200).send({
-          status: "success",
-          message: "Operation Successfull",
-          cart: data,
-        });
-      } else {
-        res.send({
-          status: "failed",
-          error: "Faild due to following:\n" + err.message,
-        });
-      }
-    });
-  } catch (error) {
-    res.send({ status: "failed", message: error.message });
-  }
-});
-
+// Check Out
 router.post("/checkOut", async (req, res) => {
   const obj = req.body;
   try {
@@ -471,7 +448,8 @@ router.post("/checkOut", async (req, res) => {
   } catch (error) {}
 });
 
-router.post("/showUserOrders", (req, res) => {
+// Show User Orders
+router.post("/order/show/user", (req, res) => {
   const { userId } = req.body;
   order
     .find({ userId: userId })
@@ -490,7 +468,9 @@ router.post("/showUserOrders", (req, res) => {
       });
     });
 });
-router.get("/showOrders", (req, res) => {
+
+// Show Orders
+router.get("/order/show", (req, res) => {
   order
     .find({})
     .then((data) => {
@@ -509,6 +489,7 @@ router.get("/showOrders", (req, res) => {
     });
 });
 
+// Payment
 router.post("/payment", (req, res) => {
   Strip.customers
     .create({
