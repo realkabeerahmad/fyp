@@ -2,12 +2,17 @@
 const mongoose = require("mongoose");
 // Pet Schema
 const AdoptionFormSchema = mongoose.Schema({
-  userId: String,
-  petId: String,
-  dob: Date,
-  cnic: String,
-  house_type: String,
-  isYardFenced: String,
+  user: {
+    _id: String,
+    name: String,
+    dob: Date,
+    cnic: String,
+    email: String,
+    phone: String,
+  },
+  shelterId: String,
+  status: { type: String, default: "Pending" },
+  pet: { _id: String, name: String },
   createdAt: { type: Date, default: Date.now },
 });
 // Exporting Pet Model

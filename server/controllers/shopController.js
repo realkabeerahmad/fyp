@@ -218,6 +218,7 @@ router.post("/delete", (req, res) => {
 // Create Cart
 router.post("/cart/new", (req, res) => {
   const { userId } = req.body;
+  console.log(req.body);
   try {
     cart.findOne({ userId: userId }, async (err, data) => {
       if (data) {
@@ -379,7 +380,7 @@ router.post("/cart/update/quantity", (req, res) => {
       },
       {
         $set: {
-          "products.quantity": quantity,
+          "products.$.quantity": quantity,
         },
       }
     )
@@ -389,7 +390,8 @@ router.post("/cart/update/quantity", (req, res) => {
         message: "Product quantity updated in Cart",
       });
     })
-    .catch(() => {
+    .catch((err) => {
+      console.log(err);
       res.send({
         status: "failed",
         message: "Unable to Update",

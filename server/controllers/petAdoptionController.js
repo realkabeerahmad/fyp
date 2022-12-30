@@ -5,11 +5,6 @@ const express = require("express");
 const upload = require("../config/multer");
 
 const bcrypt = require("bcrypt-nodejs");
-// UUID V4 for generation Link
-const { v4: uuidv4 } = require("uuid");
-
-// Pet Model Created using MongoDB
-const User = require("../models/user");
 
 // Pet Model Created using MongoDB
 const Pet = require("../models/pet");
@@ -20,12 +15,13 @@ const shelter = require("../models/shelter");
 // Adoption Form Model
 const adoptionForm = require("../models/adoptionForm");
 const user = require("../models/user");
+const pet = require("../models/pet");
 
 // Using Router from Express JS to create exportable routes
 const router = express.Router();
 
 // Add a Shelter
-router.post("/addShelter", (req, res) => {
+router.post("/shelter/add", (req, res) => {
   const { name, description, address, RegistrationNo, email, phone, password } =
     req.body;
   const obj = {
@@ -39,6 +35,7 @@ router.post("/addShelter", (req, res) => {
   };
   const salt = bcrypt.genSaltSync(10);
   var shelterUser = {
+    _id: "",
     name,
     email,
     password,
@@ -58,12 +55,14 @@ router.post("/addShelter", (req, res) => {
           } else {
             shelterUser.password = hash;
             const Shelter = new shelter(obj);
-            await Shelter.save();
-            const User = new user(shelterUser);
-            await User.save();
-            res.status(200).send({
-              status: "success",
-              message: "Shelter Registered Successfully",
+            Shelter.save().then(async (shelter) => {
+              shelterUser._id = shelter._id;
+              const User = new user(shelterUser);
+              await User.save();
+              res.status(200).send({
+                status: "success",
+                message: "Shelter Registered Successfully",
+              });
             });
           }
         });
@@ -73,9 +72,8 @@ router.post("/addShelter", (req, res) => {
     res.send({ status: "failed", message: error.message });
   }
 });
-
 // Show All Shlters
-router.get("/showAllShelters", (req, res) => {
+router.get("/shelters/show/all", (req, res) => {
   try {
     shelter.find({}, (err, data) => {
       if (data) {
@@ -92,66 +90,8 @@ router.get("/showAllShelters", (req, res) => {
     res.send({ status: "failed", message: error.message });
   }
 });
-
-// Add a Pet
-router.post("/addPet", upload.single("image"), (req, res) => {
-  // Getting Data
-  const obj = {
-    shelterID: req.body.shelterID,
-    name: req.body.name,
-    bio: req.body.bio,
-    gender: req.body.gender,
-    breed: req.body.breed,
-    type: req.body.type,
-    image: req.file.filename,
-    passport: req.body.passport,
-    dob: req.body.dob,
-    rehome: true,
-    shelterName: "",
-  };
-  // const _id = "'" + obj.shelterID + "'";
-  const _id = obj.shelterID;
-  console.log(_id);
-  try {
-    // Check if user Exist
-    shelter.findById({ _id }, (err, data) => {
-      if (data) {
-        console.log(obj.name);
-        obj.shelterName = data.name;
-        // Create an obj to store in DB
-        const pet = new Pet(obj);
-        // Save obj in DB
-        pet
-          .save()
-          .then(() => {
-            res.status(200).send({
-              status: "success",
-              message: "Pet Successfully Registered",
-            });
-          })
-          .catch((err) => {
-            res.json({
-              status: "failed",
-              error: "Unable to Register\n" + err.message,
-            });
-          });
-      } else {
-        res.json({
-          status: "failed",
-          error: "Shelter Not Found",
-        });
-      }
-    });
-  } catch (error) {
-    res.status(500).json({
-      status: "failed",
-      error: error.message,
-    });
-  }
-});
-
 // Show All Pets
-router.get("/showAllPets", (req, res) => {
+router.get("/adopt/show/all", (req, res) => {
   try {
     Pet.find({ rehome: true }, (err, data) => {
       if (data) {
@@ -168,51 +108,104 @@ router.get("/showAllPets", (req, res) => {
     res.send({ status: "failed", message: error.message });
   }
 });
-
-router.post("/adoptPet", (req, res) => {
-  const { petId, userId, dob, cnic, gender, house_type, isYardFenced } =
-    req.body;
+// Adopt Pet
+router.post("/adopt", async (req, res) => {
+  const { petId, shelterId, userId, dob, cnic, gender, phone } = req.body;
+  const Pet = await pet.findById({ _id: petId });
+  const User = await user.findById({ _id: userId });
   const userObj = {
     dob: dob,
     cnic: cnic,
     gender: gender,
+    phone: phone,
   };
   const appObj = {
-    userId: userId,
-    petId: petId,
-    dob: dob,
-    cnic: cnic,
-    house_type: house_type,
-    isYardFenced: isYardFenced,
+    user: {
+      _id: userId,
+      name: User.name,
+      email: User.email,
+      dob: dob,
+      cnic: cnic,
+      phone: phone,
+    },
+    shelterId: shelterId,
+    pet: {
+      _id: petId,
+      name: Pet.name,
+    },
   };
+  console.log(appObj);
   user
     .findByIdAndUpdate({ _id: userId }, userObj)
     .then((user) => {
-      adoptionForm.findOne({ userId: userId, petId: petId }, (err, form) => {
-        if (form) {
-          res.send({
-            status: "failed",
-            message: "Application already submitted",
-          });
-        } else {
-          const AdoptForm = new adoptionForm(appObj);
-          AdoptForm.save()
-            .then(() => {
-              res.send({
-                status: "success",
-                message: "Application submitted Successfully",
-              });
-            })
-            .catch(() => {
-              console.log("application not saved");
-              res.send({ status: "failed", message: "Error Occured" });
+      adoptionForm.findOne(
+        { "user._id": userId, "pet._id": petId },
+        (err, form) => {
+          if (form) {
+            res.send({
+              status: "failed",
+              message: "Application already submitted",
             });
+          } else {
+            const AdoptForm = new adoptionForm(appObj);
+            AdoptForm.save()
+              .then(() => {
+                res.send({
+                  status: "success",
+                  message: "Application submitted Successfully",
+                });
+              })
+              .catch(() => {
+                console.log("application not saved");
+                res.send({ status: "failed", message: "Error Occured" });
+              });
+          }
         }
-      });
+      );
     })
     .catch(() => {
       res.send({ status: "failed", message: "Error Occured" });
     });
+});
+// Show Shelter Applications
+router.post("/applications/show/shelters", (req, res) => {
+  const { shelterId } = req.body;
+  adoptionForm.find({ shelterId: shelterId }, (err, data) => {
+    if (data) {
+      res.send({ status: "success", data: data });
+    } else {
+      res.send({ status: "failed", data: [] });
+    }
+  });
+});
+// Show Shelter Applications
+router.post("/applications/status", (req, res) => {
+  const { shelterId, _id, status } = req.body;
+  adoptionForm.find({ _id: _id, shelterId: shelterId }, (err, data) => {
+    if (data) {
+      adoptionForm
+        .findByIdAndUpdate({ _id: _id }, { status: status })
+        .then(() => {
+          res.send({ status: "success", message: "Status Updated" });
+        })
+        .catch((err) => {
+          res.send({ status: "failed", message: err.message });
+        });
+    } else {
+      res.send({ status: "failed", message: "Application not found" });
+    }
+  });
+});
+// Show user Applications
+router.post("/applications/show/user", (req, res) => {
+  const { userId } = req.body;
+  adoptionForm.find({ userId: userId }, (err, data) => {
+    if (data) {
+      res.send({ status: "success", data: data });
+    } else {
+      res.send({ status: "failed", data: [] });
+    }
+  });
 });
 
 module.exports = router;

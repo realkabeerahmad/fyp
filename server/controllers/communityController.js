@@ -10,8 +10,10 @@ const post = require("../models/post");
 const router = express.Router();
 
 // Add a Post
-router.post("/post", (req, res) => {
-  const { content, userId, name, Image } = req.body;
+router.post("/post", async (req, res) => {
+  const { content, userId, Image } = req.body;
+  const User = await user.findById({ _id: userId });
+  console.log(User);
   const seprate = content.split(" ");
   const tags = [];
   for (let i = 0; i < seprate.length; i++) {
@@ -22,8 +24,9 @@ router.post("/post", (req, res) => {
   try {
     const Post = new post({
       content: content,
-      user: { userId: userId, name: name, Image: Image },
+      user: { userId: userId, name: User.name, Image: User.Image },
       tags: tags,
+      Image: Image ? Image : "",
     });
     Post.save()
       .then(() => {
@@ -37,7 +40,7 @@ router.post("/post", (req, res) => {
   }
 });
 // Delete a Post
-router.post("/deletePost", (req, res) => {
+router.post("/post/delete", (req, res) => {
   const { _id } = req.body;
   try {
     post
@@ -71,7 +74,18 @@ router.post("/comment", (req, res) => {
           }
         )
         .then(() => {
-          res.send({ status: "success", message: "Comment Added" });
+          post
+            .findById({ _id: _id })
+            .then((post) => {
+              res.send({
+                status: "success",
+                message: "Comment Added",
+                data: post,
+              });
+            })
+            .catch((err) => {
+              res.send({ status: "failed", message: err.message });
+            });
         })
         .catch((err) => {
           res.send({ status: "failed", message: err.message });
@@ -82,7 +96,7 @@ router.post("/comment", (req, res) => {
   }
 });
 // Delete a Comment
-router.post("/deleteComment", (req, res) => {
+router.post("/comment/delete", (req, res) => {
   const { content, userId, _id, commentId } = req.body;
   try {
     post
@@ -125,21 +139,11 @@ router.post("/deleteComment", (req, res) => {
 // Add a Like
 router.post("/like", (req, res) => {
   const { userId, _id } = req.body;
-  var flag;
   try {
-    post.findById({ _id: _id }, (err, data) => {
-      if (err) {
-        res.send({ status: "failed", message: "Error Occured" });
-      } else if (data) {
-        if (data.likes.length > 0) {
-          for (let i = 0; i < data.likes.length; i++) {
-            if (data.likes[i].userId === userId) {
-              flag = true;
-              break;
-            }
-          }
-        }
-        if (flag) {
+    post.find(
+      { _id: _id, likes: { $elemMatch: { userId: userId } } },
+      (err, data) => {
+        if (data.length > 0) {
           res.send({ status: "success", message: "Post already Liked" });
         } else {
           post
@@ -151,21 +155,72 @@ router.post("/like", (req, res) => {
               }
             )
             .then(() => {
-              res.send({
-                status: "success",
-                message: "Post Liked Successfully",
-              });
+              post
+                .findById({ _id: _id })
+                .then((post) => {
+                  res.send({
+                    status: "success",
+                    message: "Post Liked Successfully",
+                    data: post,
+                  });
+                })
+                .catch((err) => {
+                  res.send({ status: "failed", message: "Error Occured" });
+                });
             })
             .catch((err) => {
               res.send({ status: "failed", message: "Error Occured" });
             });
         }
       }
-    });
+    );
   } catch (error) {
     res.send({ status: "failed", message: error.message });
   }
 });
+// Remove a Like
+router.post("/dislike", (req, res) => {
+  const { userId, _id } = req.body;
+  try {
+    post.find(
+      { _id: _id, likes: { $elemMatch: { userId: userId } } },
+      (err, data) => {
+        if (data.length > 0) {
+          post
+            .findByIdAndUpdate(
+              { _id: _id },
+              {
+                $pull: { likes: { userId: userId } },
+                $inc: { likes_count: -1 },
+              }
+            )
+            .then(() => {
+              post
+                .findById({ _id: _id })
+                .then((post) => {
+                  res.send({
+                    status: "success",
+                    message: "Post DisLiked Successfully",
+                    data: post,
+                  });
+                })
+                .catch((err) => {
+                  res.send({ status: "failed", message: "Error Occured" });
+                });
+            })
+            .catch((err) => {
+              res.send({ status: "failed", message: "Error Occured" });
+            });
+        } else {
+          res.send({ status: "success", message: "Post Not Yet Liked" });
+        }
+      }
+    );
+  } catch (error) {
+    res.send({ status: "failed", message: error.message });
+  }
+});
+
 // Show Posts by a User
 router.post("/showUserPosts", (req, res) => {
   const { userId } = req.body;
