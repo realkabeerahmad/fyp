@@ -13,6 +13,8 @@ const UserSchema = mongoose.Schema({
   isAdmin: { type: Boolean, default: false },
   isShelter: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now },
+  product_wish: [{ _id: String, image: String, name: String }],
+  pet_wish: [{ _id: String, image: String, name: String }],
 });
 // Expoting User Model
 module.exports = mongoose.model("users", UserSchema);

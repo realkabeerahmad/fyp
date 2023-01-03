@@ -28,6 +28,7 @@ const order = require("../models/order");
 const { default: Stripe } = require("stripe");
 const uploadFile = require("../config/firebase");
 const fs = require("fs");
+const user = require("../models/user");
 
 // Add a Product
 router.post("/add", async (req, res) => {
@@ -62,7 +63,7 @@ router.post("/add", async (req, res) => {
 });
 
 // View a Product
-router.get("/show", (req, res) => {
+router.post("/show", (req, res) => {
   const { _id } = req.body;
   try {
     product.findById({ _id: _id }, (product, err) => {
@@ -516,4 +517,14 @@ router.post("/payment", (req, res) => {
     });
 });
 
+router.post("/wishlist/add", async (req, res) => {
+  const { userId, _id } = req.body;
+  const p = await product.findById({ _id: _id });
+  user
+    .find({ _id: userId, $elemMatch: { product_wish: { _id: _id } } })
+    .then((data) => {
+      console.log(data);
+    });
+  user.findByIdAndUpdate();
+});
 module.exports = router;
