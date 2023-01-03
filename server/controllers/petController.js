@@ -580,5 +580,61 @@ router.post("/gallery/delete", (req, res) => {
   }
 });
 
+router.post("/wish", async (req, res) => {
+  const { userId, _id } = req.body;
+  const p = await Pet.findById({ _id: _id });
+  User.find({ _id: userId, pet_wish: { $elemMatch: { _id: _id } } })
+    .then((data) => {
+      if (data.length > 0) {
+        // res.send({ status: "failed", message: "Already in WishList" });
+        User.findByIdAndUpdate(
+          { _id: userId },
+          // { new: true },
+          {
+            $pull: {
+              pet_wish: { _id: p._id },
+            },
+          }
+        )
+          .then(async () => {
+            const user = await User.findById({ _id: userId });
+            res.send({
+              status: "success",
+              message: "Removed from WishList",
+              data: user,
+            });
+          })
+          .catch((err) => {
+            res.send({ status: "failed", message: err.message });
+          });
+      } else {
+        User.findByIdAndUpdate(
+          { _id: userId },
+          // { new: true },
+          {
+            $push: {
+              pet_wish: { _id: p._id, name: p.name, image: p.Image },
+            },
+          }
+        )
+          .then(async () => {
+            const user = await User.findById({ _id: userId });
+            res.send({
+              status: "success",
+              message: "Added to WishList",
+              data: user,
+            });
+          })
+          .catch((err) => {
+            res.send({ status: "failed", message: err.message });
+          });
+      }
+    })
+    .catch((err) => {
+      res.send({ status: "failed", message: err.message });
+    });
+  // user.findByIdAndUpdate();
+});
+
 // Exporting Routes
 module.exports = router;

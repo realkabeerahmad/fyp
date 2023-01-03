@@ -517,14 +517,62 @@ router.post("/payment", (req, res) => {
     });
 });
 
-router.post("/wishlist/add", async (req, res) => {
+router.post("/wish", async (req, res) => {
   const { userId, _id } = req.body;
   const p = await product.findById({ _id: _id });
   user
-    .find({ _id: userId, $elemMatch: { product_wish: { _id: _id } } })
+    .find({ _id: userId, product_wish: { $elemMatch: { _id: _id } } })
     .then((data) => {
-      console.log(data);
+      if (data.length > 0) {
+        // res.send({ status: "failed", message: "Already in WishList" });
+        user
+          .findByIdAndUpdate(
+            { _id: userId },
+            // { new: true },
+            {
+              $pull: {
+                product_wish: { _id: p._id },
+              },
+            }
+          )
+          .then(async () => {
+            const User = await user.findById({ _id: userId });
+            res.send({
+              status: "success",
+              message: "Removed from WishList",
+              data: User,
+            });
+          })
+          .catch((err) => {
+            res.send({ status: "failed", message: err.message });
+          });
+      } else {
+        user
+          .findByIdAndUpdate(
+            { _id: userId },
+            // { new: true },
+            {
+              $push: {
+                product_wish: { _id: p._id, name: p.name, image: p.Image },
+              },
+            }
+          )
+          .then(async () => {
+            const User = await user.findById({ _id: userId });
+            res.send({
+              status: "success",
+              message: "Added to WishList",
+              data: User,
+            });
+          })
+          .catch((err) => {
+            res.send({ status: "failed", message: err.message });
+          });
+      }
+    })
+    .catch((err) => {
+      res.send({ status: "failed", message: err.message });
     });
-  user.findByIdAndUpdate();
+  // user.findByIdAndUpdate();
 });
 module.exports = router;
