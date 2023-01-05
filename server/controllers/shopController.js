@@ -492,6 +492,29 @@ router.get("/order/show", (req, res) => {
     });
 });
 
+router.post("/order/update", (req, res) => {
+  const { _id, TrackingService, TrackingId, status } = req.body;
+  order
+    .findByIdAndUpdate(
+      { _id: _id },
+      {
+        status: status,
+        TrackingService: TrackingService,
+        TrackingId: TrackingId,
+      }
+    )
+    .then(async () => {
+      const o = await order.findById({ _id: _id });
+      res.send({ status: "success", message: "Order Updated", data: o });
+    })
+    .catch((err) => {
+      res.send({
+        status: "failed",
+        message: "Order can't be Updated" + err.message,
+      });
+    });
+});
+
 // Payment
 router.post("/payment", (req, res) => {
   Strip.customers
@@ -519,7 +542,9 @@ router.post("/payment", (req, res) => {
 
 router.post("/wish", async (req, res) => {
   const { userId, _id } = req.body;
+  console.log(_id);
   const p = await product.findById({ _id: _id });
+  console.log(p);
   user
     .find({ _id: userId, product_wish: { $elemMatch: { _id: _id } } })
     .then((data) => {

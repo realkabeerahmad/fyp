@@ -197,16 +197,38 @@ router.post("/user/show", (req, res) => {
 router.post("/rehome", (req, res) => {
   var { _id } = req.body;
   try {
-    Pet.findByIdAndUpdate({ _id: _id }, { rehome: true }, (err, data) => {
-      if (data) {
+    Pet.findByIdAndUpdate({ _id: _id }, { rehome: true })
+      .then(async () => {
+        const data = await Pet.findById({ _id: _id });
         res.status(200).send({
           status: "success",
           message: "Pet Rehomed Succefully",
           data: data,
         });
-      }
-      throw Error("Error Occured");
-    });
+      })
+      .catch((err) => {
+        res.send({ status: "failed", message: err });
+      });
+  } catch (error) {
+    res.send({ status: "failed", message: error.message });
+  }
+});
+// Pet Rehome Undo
+router.post("/rehome/undo", (req, res) => {
+  var { _id } = req.body;
+  try {
+    Pet.findByIdAndUpdate({ _id: _id }, { rehome: false })
+      .then(async () => {
+        const data = await Pet.findById({ _id: _id });
+        res.status(200).send({
+          status: "success",
+          message: "Undo Rehomed Succefully",
+          data: data,
+        });
+      })
+      .catch((err) => {
+        res.send({ status: "failed", message: err });
+      });
   } catch (error) {
     res.send({ status: "failed", message: error.message });
   }
@@ -613,7 +635,7 @@ router.post("/wish", async (req, res) => {
           // { new: true },
           {
             $push: {
-              pet_wish: { _id: p._id, name: p.name, image: p.Image },
+              pet_wish: { _id: p._id, name: p.name, image: p.image },
             },
           }
         )

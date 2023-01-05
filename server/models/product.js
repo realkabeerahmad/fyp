@@ -7,10 +7,10 @@ const ProductSchema = mongoose.Schema({
   quantity: Number,
   price: Number,
   description: String,
-  Warranty: { type: Boolean, default: false },
-  Return: { type: Boolean, default: false },
-  StandardShipping: { type: Boolean, default: false },
-  FastShipping: { type: Boolean, default: false },
+  Warranty: { type: String, default: "N/A" },
+  Return: { type: String, default: "N/A" },
+  StandardShipping: { type: String, default: "N/A" },
+  FastShipping: { type: String, default: "N/A" },
   Image: String,
   rating: [
     {
