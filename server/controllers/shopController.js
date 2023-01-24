@@ -17,15 +17,15 @@ const Upload = require("../config/multer");
 const { v4: uuidv4 } = require("uuid");
 
 // Strip for Payment
-const Strip = require("stripe")(
-  "sk_test_51M7jqtILXO2OeSWiHaLiBJ0nusNK69m7ljN5aVOLbBZ7hlhtpQPotdChUth3WNk4hSlxrYRsrqt4Xz1F4QCqeWzO00p5PefrRg"
-);
+("sk_test_51M7jqtILXO2OeSWiHaLiBJ0nusNK69m7ljN5aVOLbBZ7hlhtpQPotdChUth3WNk4hSlxrYRsrqt4Xz1F4QCqeWzO00p5PefrRg");
 
 // Import Product Model
 const product = require("../models/product");
 const cart = require("../models/cart");
 const order = require("../models/order");
-const { default: Stripe } = require("stripe");
+const { default: Stripe } = require("stripe")(
+  "sk_test_51M7jqtILXO2OeSWiHaLiBJ0nusNK69m7ljN5aVOLbBZ7hlhtpQPotdChUth3WNk4hSlxrYRsrqt4Xz1F4QCqeWzO00p5PefrRg"
+);
 const uploadFile = require("../config/firebase");
 const fs = require("fs");
 const user = require("../models/user");
@@ -42,7 +42,7 @@ router.post("/add", async (req, res) => {
     Return: req.body.Return,
     StandardShipping: req.body.StandardShipping,
     FastShipping: req.body.FastShipping,
-    Image: req.body.image,
+    Image: req.body.Image,
   };
   try {
     const Product = new product(obj);
@@ -63,17 +63,18 @@ router.post("/add", async (req, res) => {
 });
 
 // View a Product
-router.post("/show", (req, res) => {
-  const { _id } = req.body;
+router.get("/show:_id", (req, res) => {
+  const { _id } = req.params;
+  console.log(_id);
   try {
-    product.findById({ _id: _id }, (product, err) => {
-      if (product) {
-        res.status(200).send({ status: "success", data: product });
-      } else {
-        // throw Error(err.message);
+    product
+      .findById({ _id: _id })
+      .then((data) => {
+        res.status(200).send({ status: "success", data: data });
+      })
+      .catch((err) => {
         res.send({ status: "failed", message: err.message });
-      }
-    });
+      });
   } catch (error) {
     res.send({ status: "failed", message: error.message });
   }
@@ -158,47 +159,61 @@ router.post("/filter", (req, res) => {
 router.post("/rate", (req, res) => {
   const { _id, userId, value } = req.body;
   try {
-    product.findById({ _id: _id }).then((p) => {
-      let rating = p.rating;
-
-      if (rating.length > 0) {
-        for (let i = 0; i < rating.length; i++) {
-          if (rating[i].userId === userId) {
-            res.send({ status: "failed", message: "Rating Already Added." });
-          }
+    product
+      .find({ _id: _id, rating: { $elemMatch: { userId: userId } } })
+      .then((p) => {
+        if (p.length <= 0) {
+          product
+            .findByIdAndUpdate(
+              { _id: _id },
+              {
+                $push: {
+                  rating: { userId: userId, value: value },
+                },
+              }
+            )
+            .then(async () => {
+              const data = await product.findById({ _id: _id });
+              res.send({
+                status: "success",
+                message: "Rating Added",
+                data: data,
+              });
+            })
+            .catch((err) => {
+              res.send({ status: "failed", message: "Error Occured" + err });
+            });
+        } else {
+          product
+            .findOneAndUpdate(
+              { _id: _id, rating: { $elemMatch: { userId: userId } } },
+              {
+                $set: {
+                  "rating.$.value": value,
+                },
+              }
+            )
+            .then(async () => {
+              const data = await product.findById({ _id: _id });
+              res.send({
+                status: "success",
+                message: "Rating Updated",
+                data: data,
+              });
+            })
+            .catch((err) => {
+              res.send({ status: "failed", message: "Error Occured" + err });
+            });
         }
-      } else {
-        product
-          .findByIdAndUpdate(
-            { _id: _id },
-            {
-              $push: {
-                rating: { userId: userId, value: value },
-              },
-            }
-          )
-          .then(() => {
-            res.status(200).send({
-              status: "success",
-              message: "Rating Added",
-            });
-          })
-          .catch((err) => {
-            res.send({
-              status: "failed",
-              message: "Unable to Add Meal Time\n" + err.message,
-            });
-          });
-      }
-    });
+      });
   } catch (error) {
     res.send({ status: "failed", message: error.message });
   }
 });
 
 // Delete a Product
-router.post("/delete", (req, res) => {
-  const { _id } = req.body;
+router.delete("/delete:_id", (req, res) => {
+  const { _id } = req.params;
   try {
     product
       .findByIdAndDelete({ _id: _id })
@@ -403,6 +418,7 @@ router.post("/cart/update/quantity", (req, res) => {
 // Check Out
 router.post("/checkOut", async (req, res) => {
   const obj = req.body;
+  console.log(obj);
   try {
     for (let i = 0; i < obj.products.length; i++) {
       const _id = obj.products[i]._id;
@@ -516,35 +532,36 @@ router.post("/order/update", (req, res) => {
 });
 
 // Payment
-router.post("/payment", (req, res) => {
-  Strip.customers
-    .create({
-      email: req.body.email,
-      source: req.body.stripeToken,
-      name: req.body.name,
-      address: req.body.address,
-    })
+router.post("/payment", (req, res, next) => {
+  console.log(req.body.token);
+  const { token, amount } = req.body;
+  const idempotencyKey = uuidv4();
+  return Stripe.Customers.create({
+    email: token.email,
+    source: token,
+  })
     .then((customer) => {
-      return Strip.charges.create({
-        amount: req.body.amount * 100, // Charging Rs 25
-        description: "Shop Order",
-        currency: "PKR",
-        customer: customer.id,
-      });
+      Stripe.Charges.create(
+        {
+          amount: amount * 100,
+          currency: "usd",
+          customer: customer.id,
+          receipt_email: token.email,
+        },
+        { idempotencyKey }
+      );
     })
-    .then((charge) => {
-      res.send("Success"); // If no error occurs
+    .then((result) => {
+      res.status(200).json(result);
     })
     .catch((err) => {
-      res.send(err); // If some error occurs
+      console.log(err);
     });
 });
 
 router.post("/wish", async (req, res) => {
   const { userId, _id } = req.body;
-  console.log(_id);
   const p = await product.findById({ _id: _id });
-  console.log(p);
   user
     .find({ _id: userId, product_wish: { $elemMatch: { _id: _id } } })
     .then((data) => {

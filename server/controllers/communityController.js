@@ -12,8 +12,8 @@ const router = express.Router();
 // Add a Post
 router.post("/post", async (req, res) => {
   const { content, userId, Image } = req.body;
-  const User = await user.findById({ _id: userId });
-  console.log(User);
+  // const User = await user.findById({ _id: userId });
+  // console.log(User);
   const seprate = content.split(" ");
   const tags = [];
   for (let i = 0; i < seprate.length; i++) {
@@ -24,7 +24,7 @@ router.post("/post", async (req, res) => {
   try {
     const Post = new post({
       content: content,
-      user: { userId: userId, name: User.name, Image: User.Image },
+      user: userId,
       tags: tags,
       Image: Image ? Image : "",
     });
@@ -66,7 +66,7 @@ router.post("/comment", (req, res) => {
           {
             $push: {
               comments: {
-                user: { _id: data._id, name: data.name, Image: data.Image },
+                user: data._id,
                 content: content,
               },
             },
@@ -76,6 +76,8 @@ router.post("/comment", (req, res) => {
         .then(() => {
           post
             .findById({ _id: _id })
+            .populate({ path: "user", select: "_id name Image" })
+            .populate({ path: "comments.user", select: "_id name Image" })
             .then((post) => {
               res.send({
                 status: "success",
@@ -157,6 +159,8 @@ router.post("/like", (req, res) => {
             .then(() => {
               post
                 .findById({ _id: _id })
+                .populate({ path: "user", select: "_id name Image" })
+                .populate({ path: "comments.user", select: "_id name Image" })
                 .then((post) => {
                   res.send({
                     status: "success",
@@ -197,6 +201,8 @@ router.post("/dislike", (req, res) => {
             .then(() => {
               post
                 .findById({ _id: _id })
+                .populate({ path: "user", select: "_id name Image" })
+                .populate({ path: "comments.user", select: "_id name Image" })
                 .then((post) => {
                   res.send({
                     status: "success",
@@ -225,9 +231,17 @@ router.post("/dislike", (req, res) => {
 router.post("/showUserPosts", (req, res) => {
   const { userId } = req.body;
   try {
-    post.find({ userId: userId }).then((posts) => {
-      res.send({ status: "success", message: "User Posts Sent", data: posts });
-    });
+    post
+      .find({ userId: userId })
+      .populate({ path: "user", select: "_id name Image" })
+      .populate({ path: "comments.user", select: "_id name Image" })
+      .then((posts) => {
+        res.send({
+          status: "success",
+          message: "User Posts Sent",
+          data: posts,
+        });
+      });
   } catch (error) {
     res.send({ status: "failed", message: error.message });
   }
@@ -239,6 +253,8 @@ router.get("/showAllPosts", (req, res) => {
     post
       .find({})
       .sort({ createdAt: -1 })
+      .populate({ path: "user", select: "_id name Image" })
+      .populate({ path: "comments.user", select: "_id name Image" })
       .then((posts) => {
         res.send({
           status: "success",
@@ -270,18 +286,28 @@ router.post("/search", (req, res) => {
         }
       });
     } else {
-      post.find({ $text: { $search: searched_text } }, (err, data) => {
-        if (data) {
-          res.status(200).send({ status: "success", posts: data });
-        } else {
-          // throw Error("Products not found");
+      post
+        .find({ $text: { $search: searched_text } })
+        .populate({ path: "user", select: "_id name Image" })
+        .populate({ path: "comments.user", select: "_id name Image" })
+        .then((data) => {
+          if (data) {
+            res.status(200).send({ status: "success", posts: data });
+          } else {
+            res.send({
+              status: "failed",
+              message: "Post not found",
+              posts: [],
+            });
+          }
+        })
+        .catch((err) => {
           res.send({
             status: "failed",
-            message: "Post not found",
+            message: "Error Occured",
             posts: [],
           });
-        }
-      });
+        });
     }
   } catch (error) {
     res.send({ status: "failed", message: error.message });

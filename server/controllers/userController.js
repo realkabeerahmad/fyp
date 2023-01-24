@@ -307,24 +307,34 @@ const SendOtpVerificationEmail = async ({ _id, email }, res) => {
     await newOtpVerfication.save();
     transporter.sendMail(mailOptions, (err, info) => {
       if (err) {
+        User.findByIdAndDelete({ _id: _id })
+          .then(() => {
+            return res.send({
+              status: "failed",
+              message: "Not able to send OTP" + err.message,
+            });
+          })
+          .catch((err) => {
+            return res.send({
+              status: "failed",
+              message: "Server Error" + err.message,
+            });
+          });
+      } else {
         return res.send({
-          status: "failed",
-          error: "Not able to send OTP",
+          status: "pending",
+          message: "Verification OTP email sent.",
+          data: {
+            userId: _id,
+            email,
+          },
         });
       }
-      return res.send({
-        status: "pending",
-        message: "Verification OTP email sent.",
-        data: {
-          userId: _id,
-          email,
-        },
-      });
     });
   } catch (error) {
     res.json({
       status: "failed",
-      message: error.message,
+      message: "error message",
     });
   }
 };

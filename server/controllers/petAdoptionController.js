@@ -22,8 +22,16 @@ const router = express.Router();
 
 // Add a Shelter
 router.post("/shelter/add", (req, res) => {
-  const { name, description, address, RegistrationNo, email, phone, password } =
-    req.body;
+  const {
+    name,
+    description,
+    address,
+    RegistrationNo,
+    email,
+    phone,
+    password,
+    Image,
+  } = req.body;
   const obj = {
     name,
     description,
@@ -31,7 +39,7 @@ router.post("/shelter/add", (req, res) => {
     RegistrationNo,
     email,
     phone,
-    Image: "https://i.ibb.co/Lk9vMV2/newUser.png",
+    Logo: Image ? Image : "https://i.ibb.co/Lk9vMV2/newUser.png",
   };
   const salt = bcrypt.genSaltSync(10);
   var shelterUser = {
@@ -39,7 +47,7 @@ router.post("/shelter/add", (req, res) => {
     name,
     email,
     password,
-    Image: "https://i.ibb.co/Lk9vMV2/newUser.png",
+    Image: Image ? Image : "https://i.ibb.co/Lk9vMV2/newUser.png",
     isShelter: true,
   };
   try {
@@ -80,7 +88,7 @@ router.get("/shelters/show/all", (req, res) => {
         res.status(200).send({
           status: "success",
           message: "Sent Successfully",
-          shelters: data,
+          data: data,
         });
       } else {
         throw Error("Error Occured \n", err.message);
@@ -178,7 +186,7 @@ router.post("/applications/show/shelters", (req, res) => {
     }
   });
 });
-// Show Shelter Applications
+// Update Shelter Applications
 router.post("/applications/status", (req, res) => {
   const { shelterId, _id, status } = req.body;
   adoptionForm.find({ _id: _id, shelterId: shelterId }, (err, data) => {
