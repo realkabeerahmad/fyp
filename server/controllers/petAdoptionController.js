@@ -49,6 +49,7 @@ router.post("/shelter/add", (req, res) => {
     password,
     Image: Image ? Image : "https://i.ibb.co/Lk9vMV2/newUser.png",
     isShelter: true,
+    verified: true,
   };
   try {
     shelter.findOne({ email: email }, async (err, data) => {

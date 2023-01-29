@@ -10,11 +10,15 @@ dotenv.config();
 // Creating Nodemailer Transporter to Send Emails
 const transporter = nodemailer.createTransport({
   host: process.env.HOST,
-  port: 465,
-  secure: true,
+  port: 587,
+  secure: false,
+  requireTLS: true,
   auth: {
     user: process.env.USER,
     pass: process.env.PASS,
+  },
+  tls: {
+    ciphers: "SSLv3",
   },
 });
 

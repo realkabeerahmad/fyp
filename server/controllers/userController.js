@@ -273,7 +273,7 @@ const SendOtpVerificationEmail = async ({ _id, email }, res) => {
     const otp = Math.floor(1000 + Math.random() * 9000);
     // Mail Options
     const mailOptions = {
-      from: "otp.pethub@zohomail.com",
+      from: process.env.USER,
       to: email,
       subject: "Verify your Email",
       text: "OTP Verification Email",
@@ -306,6 +306,7 @@ const SendOtpVerificationEmail = async ({ _id, email }, res) => {
     });
     await newOtpVerfication.save();
     transporter.sendMail(mailOptions, (err, info) => {
+      console.log(err);
       if (err) {
         User.findByIdAndDelete({ _id: _id })
           .then(() => {
