@@ -217,4 +217,30 @@ router.post("/applications/show/user", (req, res) => {
   });
 });
 
+router.post("/search", (req, res) => {
+  const { searched_text } = req.body;
+  const rehome = true;
+  try {
+    // Pet.ensureIndexes({ name: "text", category: "text" });
+
+    Pet.find(
+      { $text: { $search: searched_text }, rehome: rehome },
+      (err, data) => {
+        if (data) {
+          res.status(200).send({ status: "success", products: data });
+        } else {
+          // throw Error("Products not found");
+          res.send({
+            status: "failed",
+            message: "Products not found",
+            products: [],
+          });
+        }
+      }
+    );
+  } catch (error) {
+    res.send({ status: "failed", message: error.message });
+  }
+});
+
 module.exports = router;
