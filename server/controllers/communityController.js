@@ -275,6 +275,7 @@ router.post("/search", (req, res) => {
     if (searched_text[0] === "#") {
       post.find({ tags: { $all: [searched_text] } }, (err, data) => {
         if (data) {
+          console.log(data);
           res.status(200).send({ status: "success", posts: data });
         } else {
           // throw Error("Products not found");

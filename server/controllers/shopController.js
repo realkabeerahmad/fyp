@@ -61,6 +61,22 @@ router.post("/add", async (req, res) => {
     res.send({ status: "failed", message: error.message });
   }
 });
+// Add a Product
+router.post("/edit", async (req, res) => {
+  const { _id, quantity } = req.body;
+  try {
+    product
+      .findByIdAndUpdate({ _id: _id }, { $inc: { quantity: quantity } })
+      .then(() => {
+        res.send({ status: "success", message: "Quantity Updated" });
+      })
+      .catch((err) => {
+        res.send({ status: "failed", message: err.message });
+      });
+  } catch (error) {
+    res.send({ status: "failed", message: error.message });
+  }
+});
 
 // View a Product
 router.get("/show:_id", (req, res) => {
@@ -472,6 +488,7 @@ router.post("/order/show/user", (req, res) => {
   const { userId } = req.body;
   order
     .find({ userId: userId })
+    .sort({ createdAt: -1 })
     .then((data) => {
       res.send({
         status: "success",
@@ -492,6 +509,7 @@ router.post("/order/show/user", (req, res) => {
 router.get("/order/show", (req, res) => {
   order
     .find({})
+    .sort({ createdAt: -1 })
     .then((data) => {
       res.send({
         status: "success",
