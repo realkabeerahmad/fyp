@@ -103,7 +103,8 @@ router.get("/show/all", (req, res) => {
       if (data) {
         res.status(200).send({ status: "success", products: data });
       } else {
-        throw Error("Products not found");
+        res.status(200).send({ status: "failed", products: [] });
+        // throw Error("Products not found");
       }
     });
   } catch (error) {
