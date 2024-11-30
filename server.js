@@ -1,38 +1,18 @@
-//Expoting All Required Modules
 const express = require("express");
-
-// Mongoose
 const mongoose = require("mongoose");
-
-// Dotenv
 const dotenv = require("dotenv");
-
-// Cors
 const cors = require("cors");
-
-// Path
 const path = require("path");
-
-// Importing Authentication Routes
-const userRoutes = require("./server/controllers/userController");
-
-// Impoting Pet Routes
-const petRoutes = require("./server/controllers/petController");
-
-// Impoting Pet Routes
-const shopRoutes = require("./server/controllers/shopController");
-
-// Impoting Adoption Pet Routes
-const petAdoptionRoutes = require("./server/controllers/petAdoptionController");
-
-// Impoting Community Routes
-const communityRoutes = require("./server/controllers/communityController");
+// const userRoutes = require("./server/controllers/userController");
+// const petRoutes = require("./server/controllers/petController");
+// const shopRoutes = require("./server/controllers/shopController");
+// const petAdoptionRoutes = require("./server/controllers/petAdoptionController");
+// const communityRoutes = require("./server/controllers/communityController");
+const { router } = require("./server/routes/v1");
 // const { uploadFile } = require("./server/config/firebase");
 
-//Setting Up Envionment Variables
 dotenv.config();
 
-//Creating Express App to Use Routes in Server
 const app = express();
 // ========================================================
 // ========================================================
@@ -59,15 +39,17 @@ app.get("/", (req, res) => {
   );
 });
 
-app.use("/auth", userRoutes);
+// app.use("/auth", userRoutes);
 
-app.use("/pet", petRoutes);
+// app.use("/pet", petRoutes);
 
-app.use("/shop", shopRoutes);
+// app.use("/shop", shopRoutes);
 
-app.use("/adoption", petAdoptionRoutes);
+// app.use("/adoption", petAdoptionRoutes);
 
-app.use("/community", communityRoutes);
+// app.use("/community", communityRoutes);
+
+app.use("/api/v1", router);
 
 const Port = process.env.PORT || 8000;
 // Starting Server
